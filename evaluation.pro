@@ -7,6 +7,8 @@ INCLUDEPATH +=googletest-main/googletest/include
 INCLUDEPATH +=googletest-main/googletest/
 
 QMAKE_CXXFLAGS_RELEASE += /O2			# Max optimization
+QMAKE_CXXFLAGS += -openmp
+LIBS += -fopenmp
 
 SOURCES += \
     BasicStatsTests.cpp \

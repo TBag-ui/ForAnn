@@ -1,5 +1,6 @@
 #include <BasicStats.h>
 #include <numeric>
+#include <execution>
 #include <gtest/gtest.h>
 
 // convenient for printing vectors
@@ -142,4 +143,33 @@ TEST(BasicStats, CopyConstructor)
     EXPECT_TRUE(checkProductFunction(copy.getProduct(), values));
     EXPECT_TRUE(checkSumFunction(copy.getSum(), values));
     EXPECT_TRUE(checkDifferencesFunction(copy.getDifferences(), values));
+}
+
+TEST(BasicStats, Performance)
+{
+    const size_t big_number = 100000;
+    std::vector<float> values(big_number, 1.f); //filled with 1s
+    std::chrono::steady_clock::time_point begin_basic_stats = std::chrono::steady_clock::now();
+    BasicStats stats(values);
+    std::chrono::steady_clock::time_point end_basic_stats = std::chrono::steady_clock::now();
+
+    // same computations done with parallel algorithms
+    std::chrono::steady_clock::time_point begin_stl = std::chrono::steady_clock::now();
+    float sum_stl = std::reduce( std::execution::par, values.begin(), values.end(), 0.f, std::plus<float>());
+    float product_stl = std::reduce( std::execution::par, values.begin(), values.end(), 1.f, std::multiplies<float>());
+    std::vector<float> differences_stl(values.size());
+    std::adjacent_difference(std::execution::par, values.begin(), values.end(), differences_stl.begin());
+    std::chrono::steady_clock::time_point end_stl = std::chrono::steady_clock::now();
+    EXPECT_TRUE(sum_stl == stats.getSum());
+    EXPECT_TRUE(product_stl == stats.getProduct());
+
+    auto elapsed_stl = end_stl-begin_stl;
+    auto elapsed_basic_stats = end_basic_stats-begin_basic_stats;
+    EXPECT_TRUE(elapsed_basic_stats < elapsed_stl);
+    const std::vector<float> differences = stats.getDifferences();
+    // 0th element in differences_stl is 0
+    EXPECT_TRUE(std::equal(differences.begin(), differences.end(), differences_stl.begin()+1, differences_stl.end()));
+    std::cout << "Run time factor time/stl time: " << static_cast<double>(elapsed_basic_stats.count())
+                 / static_cast<double>(elapsed_stl.count()) << std::endl;
+
 }
