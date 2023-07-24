@@ -15,6 +15,7 @@ std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
+
 bool checkSumFunction(float sum, const std::vector<float>& values)
 {
     float sum_stl = std::accumulate(values.begin(), values.end(), 0.f, std::plus<float>());
@@ -54,7 +55,7 @@ bool checkDifferencesFunction(const std::vector<float>& differences, const std::
 TEST(BasicStats, NaiveSeries)
 {
     const std::vector<float> values = {0,1,2,3,4,5};
-    BasicStats stats(values);
+    DoesTheStats stats(values, {});
 
     EXPECT_TRUE(checkProductFunction(stats.getProduct(), values));
     EXPECT_TRUE(checkSumFunction(stats.getSum(), values));
@@ -66,9 +67,8 @@ TEST(BasicStats, NaiveSeries)
 TEST(BasicStats, NDVSeries)
 {
     const std::vector<float> values = {0,1,2,3,4,5};
-    BasicStats stats;
     std::vector<float> ndvs = {0};
-    bool initialized_correctly = stats.reInitialize(values, ndvs);
+    DoesTheStats stats(values, ndvs);
 
     // product will not be the same anymore because stl will multiply by 0
     EXPECT_FALSE(checkProductFunction(stats.getProduct(), values));
@@ -81,7 +81,6 @@ TEST(BasicStats, NDVSeries)
 
     // should no longer be "good"
     EXPECT_FALSE(stats.isGood());
-    EXPECT_FALSE(initialized_correctly);
 }
 
 // It's always good to check inf and nan
@@ -94,55 +93,11 @@ TEST(BasicStats, ContainsInfNan)
     std::vector<float> values_contains_nan = {std::sqrt(negative),1,2,3,4,5};
     EXPECT_TRUE(std::isnan(values_contains_nan[0]));
 
-    BasicStats stats_inf(values_contains_inf);
+    DoesTheStats stats_inf(values_contains_inf, {});
     EXPECT_FALSE(stats_inf.isGood());
 
-    BasicStats stats_nan(values_contains_inf);
+    DoesTheStats stats_nan(values_contains_inf, {});
     EXPECT_FALSE(stats_nan.isGood());
-}
-
-/* Reinitializing objects can be a bit of a code smell, it's safer to instantiate
- * a new object for simple classes like this. However, I've run into bugs deriving
- * from this scenario several times when a well meaning colleague has extended
- * functionality or added their own reinitialize to an object so I'm adding it
- * myself with a test to reduce the chance of mistakes
- */
-TEST(BasicStats, Reinitialize)
-{
-    const std::vector<float> values = {0,1,2,3,4,5};
-    BasicStats stats(values);
-
-    EXPECT_TRUE(checkProductFunction(stats.getProduct(), values));
-    EXPECT_TRUE(checkSumFunction(stats.getSum(), values));
-    EXPECT_TRUE(checkDifferencesFunction(stats.getDifferences(), values));
-
-    stats.reInitialize(values);
-    EXPECT_TRUE(checkProductFunction(stats.getProduct(), values));
-    EXPECT_TRUE(checkSumFunction(stats.getSum(), values));
-    EXPECT_TRUE(checkDifferencesFunction(stats.getDifferences(), values));
-}
-
-TEST(BasicStats, Copy)
-{
-    const std::vector<float> values = {0,1,2,3,4,5};
-    BasicStats copy;
-    {
-        BasicStats stats(values);
-        copy = stats;
-    }
-    EXPECT_TRUE(checkProductFunction(copy.getProduct(), values));
-    EXPECT_TRUE(checkSumFunction(copy.getSum(), values));
-    EXPECT_TRUE(checkDifferencesFunction(copy.getDifferences(), values));
-}
-
-TEST(BasicStats, CopyConstructor)
-{
-    const std::vector<float> values = {0,1,2,3,4,5};
-    BasicStats stats(values);
-    BasicStats copy(stats);
-    EXPECT_TRUE(checkProductFunction(copy.getProduct(), values));
-    EXPECT_TRUE(checkSumFunction(copy.getSum(), values));
-    EXPECT_TRUE(checkDifferencesFunction(copy.getDifferences(), values));
 }
 
 TEST(BasicStats, Performance)
@@ -150,7 +105,7 @@ TEST(BasicStats, Performance)
     const size_t big_number = 100000;
     std::vector<float> values(big_number, 1.f); //filled with 1s
     std::chrono::steady_clock::time_point begin_basic_stats = std::chrono::steady_clock::now();
-    BasicStats stats(values);
+    DoesTheStats stats(values,{});
     std::chrono::steady_clock::time_point end_basic_stats = std::chrono::steady_clock::now();
 
     // same computations done with parallel algorithms
