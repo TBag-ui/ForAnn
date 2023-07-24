@@ -14,11 +14,11 @@ class BasicStatsLoop
     std::tuple<Args...> lambdas;
     const static size_t tuple_size = std::tuple_size_v<std::tuple<Args...> >;
     std::array<float, tuple_size> results;
-    FORCE_INLINE bool isFloatBad(float data_value) const;
-    FORCE_INLINE bool isFloatNoDataValue(float data_value) const;
     std::vector<float> m_ndvs;
     bool m_contains_nan_infs = false;
     bool m_contains_ndvs = false;
+    FORCE_INLINE bool isFloatBad(float data_value) const;
+    FORCE_INLINE bool isFloatNoDataValue(float data_value) const;
 public:
     BasicStatsLoop(const std::vector<float>& data, const std::vector<float>& no_data_values, const std::array<float, tuple_size>& starting_values, Args... args);
     void setNonDataValues(const std::vector<float>& ndvs);
@@ -28,9 +28,8 @@ public:
     }
 };
 
-
 // assembles a BasicStatsLoop using lambdas for sum, product, differences
-template<int = __COUNTER__>
+template<int i = 0>
 class DoesTheStats
 {
 private:
@@ -106,12 +105,6 @@ FORCE_INLINE bool BasicStatsLoop<Args...>::isFloatBad(float data_value) const
 }
 
 template <typename... Args>
-bool BasicStatsLoop<Args...>::isGood() const
-{
-    return !m_contains_ndvs && !m_contains_nan_infs;
-}
-
-template <typename... Args>
 FORCE_INLINE bool BasicStatsLoop<Args...>::isFloatNoDataValue(float data_value) const
 {
     // m_ndvs is assumed to be small. If m_ndvs were large,
@@ -126,7 +119,14 @@ FORCE_INLINE bool BasicStatsLoop<Args...>::isFloatNoDataValue(float data_value) 
 }
 
 template <typename... Args>
-BasicStatsLoop<Args...>::BasicStatsLoop(const std::vector<float>& data, const std::vector<float>& no_data_values, const std::array<float, tuple_size>& starting_values, Args... args) : lambdas(args...)
+bool BasicStatsLoop<Args...>::isGood() const
+{
+    return !m_contains_ndvs && !m_contains_nan_infs;
+}
+
+template <typename... Args>
+BasicStatsLoop<Args...>::BasicStatsLoop(const std::vector<float>& data, const std::vector<float>& no_data_values,
+                                        const std::array<float, tuple_size>& starting_values, Args... args) : lambdas(args...)
 {
     const size_t num_elements = data.size();
     m_ndvs = no_data_values;

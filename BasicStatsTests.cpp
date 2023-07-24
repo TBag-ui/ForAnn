@@ -15,7 +15,6 @@ std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
-
 bool checkSumFunction(float sum, const std::vector<float>& values)
 {
     float sum_stl = std::accumulate(values.begin(), values.end(), 0.f, std::plus<float>());
